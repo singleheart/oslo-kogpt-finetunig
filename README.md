@@ -10,7 +10,7 @@
 
 ## OSLO 설치
 ### case1. 파일사용
-`bash install.sh ${YOUR_NODE_ADDRESS} ${PORT}`
+`bash install.sh`
 
 ### case2. 수동설치
 ```bash
