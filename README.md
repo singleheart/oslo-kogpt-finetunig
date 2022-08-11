@@ -1,6 +1,6 @@
 # OSLO로 KoGPT 분산 학습하기
 
-대규모 분산학습라이브러리인 OSLO의 TensorParallel을 사용하여 
+대규모 분산학습라이브러리인 OSLO의 TensorParallel을 사용하여
 모델을 쪼개서 학습하는 예제.
 
 ## 스펙
@@ -25,6 +25,11 @@ pip install --editable .
 ```python -m torch.distributed.launch --nproc_per_node=4 finetune.py```
 
 ## 학습하기 (멀티노드, 8gpu=4gpu x 2)
+
+### torch distributed
+
+- `data_parallel_size`를 맞춰줄 것
+
 ```bash
 # 1번노드
 python -m torch.distributed.launch --nnodes=2 --node_rank=0 --nproc_per_node=4 --master_addr=${YOUR_NODE_ADDRESS} --master_port=${PORT} finetune.py
@@ -32,6 +37,9 @@ python -m torch.distributed.launch --nnodes=2 --node_rank=0 --nproc_per_node=4 -
 # 2번노드
 python -m torch.distributed.launch --nnodes=2 --node_rank=1 --nproc_per_node=4 --master_addr=${YOUR_NODE_ADDRESS} --master_port=${PORT} finetune.py
 ```
+
+### slurm
+```sbatch slurm.sh```
 
 ### 참고
 ```bash

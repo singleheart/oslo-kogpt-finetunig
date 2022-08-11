@@ -1,5 +1,5 @@
+import os
 import torch.distributed as dist
-import wandb
 from datasets import load_dataset
 
 import torch
@@ -44,8 +44,12 @@ model_name = 'kakaobrain/kogpt'
 dataset_name = "squad_kor_v1"
 
 # parallel context 생성
-parallel_context = ParallelContext.from_torch(
-    data_parallel_size=1,
+master_ip = os.getenv('MASTER_ADDR', 'localhost')
+master_port = os.getenv('MASTER_PORT', '6000')
+parallel_context = ParallelContext.from_slurm(
+    host=master_ip,
+    port=master_port,
+    data_parallel_size=2,
     pipeline_parallel_size=1,
     tensor_parallel_size=tp_size,
     tensor_parallel_mode=ParallelMode.TENSOR_1D,
@@ -83,7 +87,6 @@ dataloader = DataLoader(datasets, batch_size=batch_size)
 
 # 모니터링 생성
 if dist.get_rank() == 0:
-    wandb.init(project="oslo", name=f"{model_name}_tp2d_bs{batch_size}")
     cur = time.time()
 
 # 모니터링 생성 대기
@@ -103,20 +106,11 @@ for data in dataloader:
 
     loss_tp, tp_fw_time = fw(wrapper_tp, **inputs, labels=inputs["input_ids"])
 
-    if dist.get_rank() == 0:
-        print(f"loss:{loss_tp}")
-        wandb.log({"loss": loss_tp})
-
     _, tp_bw_time = bw(loss_tp)
     optimizer_tp.step()
 
     if dist.get_rank() == 0:
-        wandb.log(
-            {
-                "forward.time:": tp_fw_time,
-                "backward.time:": tp_bw_time,
-            }
-        )
+        print(f"loss:{loss_tp} forward:{tp_fw_time} backward:{tp_bw_time}")
 
 # 저장
 wrapper_tp.save_parallelized("test/", merge_checkpoints=False)
